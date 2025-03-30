@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
-from app.models import (patient_pydantic,patient_pydanticIn, doctor_pydantic,doctor_pydanticIn, appointment_pydantic,appointment_pydanticIn, medicalrecord_pydantic, medicalrecord_pydanticIn)
+from app.models import (patient_pydantic,patient_pydanticIn, Patient, doctor_pydantic,doctor_pydanticIn,Doctor, appointment_pydantic,appointment_pydanticIn, Appointment, medicalrecord_pydantic, medicalrecord_pydanticIn, MedicalRecord)
 
 
 app = FastAPI()
