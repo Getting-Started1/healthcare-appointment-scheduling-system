@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
+from app.models import (patient_pydantic,patient_pydanticIn, doctor_pydantic,doctor_pydanticIn, appointment_pydantic,appointment_pydanticIn, medicalrecord_pydantic, medicalrecord_pydanticIn)
 
 
 app = FastAPI()
@@ -7,7 +8,16 @@ app = FastAPI()
 @app.get('/')
 
 def index():
-    return {"Msg": "Hello World"}
+    return {"Msg": "go to / docs for the api documentation"}
+
+# Create a Patient
+@app.post('/patient')
+async def add_patient(patient_info: patient_pydanticIn):
+    patient_obj = await Patient.create(**patient_info.dict(exclude_unset=True))
+    response = await patient_pydantic.from_tortoise_orm(patient_obj)
+    return {"status": "ok", "data": response}
+     
+
 
 #Tortoise ORM setup
 register_tortoise(
@@ -18,3 +28,5 @@ register_tortoise(
     add_exception_handlers=True,   
 )
 
+
+    
