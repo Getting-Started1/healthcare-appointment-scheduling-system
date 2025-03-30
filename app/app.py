@@ -32,6 +32,13 @@ async def add_appointment(appointment_info: appointment_pydanticIn):
     response = await appointment_pydantic.from_tortoise_orm(appointment_obj)
     return {"status": "ok", "data": response}
 
+# MedicalRecords
+@app.post('/medicalrecord')
+async def add_medicalrecord(medicalrecord_info: medicalrecord_pydanticIn):
+    medicalrecord_obj = await MedicalRecord.create(**medicalrecord_info.dict(exclude_unset=True))
+    response = await medicalrecord_pydantic.from_tortoise_orm(medicalrecord_obj)
+    return {"status": "ok", "data": response}
+
 
 #Tortoise ORM setup
 register_tortoise(
