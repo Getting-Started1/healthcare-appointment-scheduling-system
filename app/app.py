@@ -17,6 +17,12 @@ async def add_patient(patient_info: patient_pydanticIn):
     response = await patient_pydantic.from_tortoise_orm(patient_obj)
     return {"status": "ok", "data": response}
      
+#Create a Doctor
+@app.post('/doctor')
+async def add_doctor(doctor_info: doctor_pydanticIn):
+    doctor_obj = await Doctor.create(**doctor_info.dict(exclude_unset=True))
+    response = await doctor_pydantic.from_tortoise_orm(doctor_obj)
+    return {"status": "ok", "data": response}
 
 
 #Tortoise ORM setup
