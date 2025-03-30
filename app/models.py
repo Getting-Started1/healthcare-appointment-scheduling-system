@@ -3,7 +3,7 @@ from tortoise import fields
 
 
 class Patient(Model):
-    id = fields.CharField(max_length=255)
+    id = fields.IntField(pk=True)
     name = fields.CharField(max_length=255, unique=True)
     email = fields.CharField(max_length = 255, unique= True)
     phone = fields.CharField(max_length = 20)
@@ -29,7 +29,7 @@ class Appointment(Model):
 class MedicalRecord(Model):
     id = fields.IntField(pk=True)
     patient = fields.ForeignKeyField("models.Patient", related_name="medical_record")
-    appointment = fields.ForeignKeyField("models.Appintment", related_name="medical_record")
+    appointment = fields.ForeignKeyField("models.Appointment", related_name="medical_record")
     diagnosis = fields.TextField()
     prescription = fields.TextField()
 
