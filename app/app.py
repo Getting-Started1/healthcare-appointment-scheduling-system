@@ -41,12 +41,51 @@ async def update_patient(patient_id: int, update_info: patient_pydanticIn):
     response = await patient_pydantic.from_tortoise_orm(patient)
     return {"status": "ok", "data": response}
      
+#Delete Patient
+@app.delete('/patient/{patient_id}')
+async def delete_patient(patient_id: int):
+    delete_count = await Patient.filter(id=patient_id).delete()
+    if delete_count == 0:
+        return{"status": "error", "message": "Patient not found"}
+         
+    return{"status": "ok", "message": "Patient deleted successfully"}
+    
+         
+     
+     
 #Create a Doctor
 @app.post('/doctor')
 async def add_doctor(doctor_info: doctor_pydanticIn):
     doctor_obj = await Doctor.create(**doctor_info.dict(exclude_unset=True))
     response = await doctor_pydantic.from_tortoise_orm(doctor_obj)
     return {"status": "ok", "data": response}
+
+
+#Get Requests
+@app.get('/doctors')
+async def get_all_doctors():
+    response = await doctor_pydantic.from_queryset(Doctor.all())
+    return {"status": "ok", "data": response}
+
+
+@app.get('/doctor/{doctor_id}')
+async def get_specific_doctor(doctor_id: int):
+    response = await doctor_pydantic.from_queryset_single(Doctor.get(id=doctor_id))
+    return {"status": "ok", "data": response}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #Create Appointment
 
