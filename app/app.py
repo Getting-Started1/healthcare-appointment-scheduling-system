@@ -74,7 +74,7 @@ async def get_specific_doctor(doctor_id: int):
     return {"status": "ok", "data": response}
 
 
-# Update Patient
+# Update Doctor
 @app.put('/doctor/{doctor_id}')
 async def update_doctor(doctor_id: int, update_info: doctor_pydanticIn):
     doctor = await Doctor.get(id=doctor_id)
@@ -86,6 +86,16 @@ async def update_doctor(doctor_id: int, update_info: doctor_pydanticIn):
     response = await doctor_pydantic.from_tortoise_orm(doctor)
     return {"status": "ok", "data": response}
      
+
+#Delete Doctor
+@app.delete('/doctor/{doctor_id}')
+async def delete_doctor(doctor_id: int):
+    delete_count = await Doctor.filter(id=doctor_id).delete()
+    if delete_count == 0:
+        return{"status": "error", "message": "Doctor not found"}
+         
+    return{"status": "ok", "message": "Doctor deleted successfully"}
+
 
 
 
