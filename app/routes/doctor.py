@@ -3,14 +3,14 @@ from tortoise.exceptions import DoesNotExist
 from app.models.doctor import Doctor
 from app.schemas.doctor import DoctorIn, DoctorOut
 from app.models.user import User
-from app.utils.auth import get_current_active_user
+from app.utils.auth import get_current_doctor
 
 router = APIRouter(prefix="/doctors", tags=["doctors"])
 
 @router.post("/", response_model=DoctorOut)
 async def create_doctor(
     doctor: DoctorIn,
-    current_user: User = Depends(get_current_active_user)
+     current_user: User = Depends(get_current_doctor)
     ):
     doctor_obj = await Doctor.create(**doctor.dict(exclude_unset=True))
     return await DoctorOut.from_tortoise_orm(doctor_obj)
