@@ -16,16 +16,30 @@ async def add_patient(patient_info: patient_pydanticIn):
     patient_obj = await Patient.create(**patient_info.dict(exclude_unset=True))
     response = await patient_pydantic.from_tortoise_orm(patient_obj)
     return {"status": "ok", "data": response}
-#Get Request
+#Get Requests
 @app.get('/patient')
 async def get_all_patients():
     response = await patient_pydantic.from_queryset(Patient.all())
     return {"status": "ok", "data": response}
+
+
 @app.get('/patient/{patient_id}')
 async def get_specific_patient(patient_id: int):
     response = await patient_pydantic.from_queryset_single(Patient.get(id=patient_id))
     return {"status": "ok", "data": response}
 
+# Update Patient
+@app.put('/patient/{patient_id}')
+async def update_patient(patient_id: int, update_info: patient_pydanticIn):
+    patient = await Patient.get(id=patient_id)
+    update_info = update_info.dict(exclude_unset=True)
+    patient.name = update_info['name']
+    patient.email = update_info['email']
+    patient.phone = update_info['phone']
+    patient.insurance_info = update_info['insurance_info']
+    await patient.save()
+    response = await patient_pydantic.from_tortoise_orm(patient)
+    return {"status": "ok", "data": response}
      
 #Create a Doctor
 @app.post('/doctor')
