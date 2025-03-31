@@ -250,6 +250,13 @@ async def add_medicalrecord(record_data: MedicalRecordCreate):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+#Get Requests
+@app.get('/medicalrecords')
+async def get_all_medicalrecord():
+    response = await medicalrecord_pydantic.from_queryset(MedicalRecord.all())
+    return {"status": "ok", "data": response}
+
+
 
 
 
