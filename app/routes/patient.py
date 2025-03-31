@@ -1,17 +1,23 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from tortoise.exceptions import DoesNotExist
 from app.models.patient import Patient
 from app.schemas.patient import PatientIn, PatientOut
+from app.utils.auth import get_current_active_user
+from app.models.user import User
+
 
 router = APIRouter(prefix="/patients", tags=["patients"])
 
 @router.post("/", response_model=PatientOut)
-async def create_patient(patient: PatientIn):
+async def create_patient(
+    patient: PatientIn,
+    current_user: User = Depends(get_current_active_user)
+):
     patient_obj = await Patient.create(**patient.dict(exclude_unset=True))
     return await PatientOut.from_tortoise_orm(patient_obj)
 
 @router.get("/", response_model=list[PatientOut])
-async def get_all_patients():
+async def get_all_patients(current_user: User = Depends(get_current_active_user)):
     return await PatientOut.from_queryset(Patient.all())
 
 @router.get("/{patient_id}", response_model=PatientOut)
