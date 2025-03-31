@@ -74,8 +74,18 @@ async def get_specific_doctor(doctor_id: int):
     return {"status": "ok", "data": response}
 
 
-
-
+# Update Patient
+@app.put('/doctor/{doctor_id}')
+async def update_doctor(doctor_id: int, update_info: doctor_pydanticIn):
+    doctor = await Doctor.get(id=doctor_id)
+    update_info = update_info.dict(exclude_unset=True)
+    doctor.name = update_info['name']
+    doctor.specialization = update_info['specialization']
+    doctor.contact = update_info['contact']
+    await doctor.save()
+    response = await doctor_pydantic.from_tortoise_orm(doctor)
+    return {"status": "ok", "data": response}
+     
 
 
 
