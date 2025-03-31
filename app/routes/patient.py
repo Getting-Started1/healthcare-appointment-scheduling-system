@@ -21,7 +21,7 @@ async def get_all_patients(current_user: User = Depends(get_current_active_user)
     return await PatientOut.from_queryset(Patient.all())
 
 @router.get("/{patient_id}", response_model=PatientOut)
-async def get_patient(patient_id: int):
+async def get_patient(patient_id: int,  current_user: User = Depends(get_current_active_user)):
     try:
         return await PatientOut.from_queryset_single(Patient.get(id=patient_id))
     except DoesNotExist:
@@ -31,12 +31,12 @@ async def get_patient(patient_id: int):
         )
 
 @router.put("/{patient_id}", response_model=PatientOut)
-async def update_patient(patient_id: int, patient: PatientIn):
+async def update_patient(patient_id: int, patient: PatientIn,  current_user: User = Depends(get_current_active_user)):
     await Patient.filter(id=patient_id).update(**patient.dict(exclude_unset=True))
     return await PatientOut.from_queryset_single(Patient.get(id=patient_id))
 
 @router.delete("/{patient_id}")
-async def delete_patient(patient_id: int):
+async def delete_patient(patient_id: int,  current_user: User = Depends(get_current_active_user)):
     deleted_count = await Patient.filter(id=patient_id).delete()
     if not deleted_count:
         raise HTTPException(
