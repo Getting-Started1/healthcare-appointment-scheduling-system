@@ -16,6 +16,16 @@ async def add_patient(patient_info: patient_pydanticIn):
     patient_obj = await Patient.create(**patient_info.dict(exclude_unset=True))
     response = await patient_pydantic.from_tortoise_orm(patient_obj)
     return {"status": "ok", "data": response}
+#Get Request
+@app.get('/patient')
+async def get_all_patients():
+    response = await patient_pydantic.from_queryset(Patient.all())
+    return {"status": "ok", "data": response}
+@app.get('/patient/{patient_id}')
+async def get_specific_patient(patient_id: int):
+    response = await patient_pydantic.from_queryset_single(Patient.get(id=patient_id))
+    return {"status": "ok", "data": response}
+
      
 #Create a Doctor
 @app.post('/doctor')
@@ -33,6 +43,7 @@ async def add_appointment(appointment_info: appointment_pydanticIn):
     return {"status": "ok", "data": response}
 
 # MedicalRecords
+# Post Request 
 @app.post('/medicalrecord')
 async def add_medicalrecord(medicalrecord_info: medicalrecord_pydanticIn):
     medicalrecord_obj = await MedicalRecord.create(**medicalrecord_info.dict(exclude_unset=True))
