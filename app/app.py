@@ -1,6 +1,13 @@
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
 from app.models import (patient_pydantic,patient_pydanticIn, Patient, doctor_pydantic,doctor_pydanticIn,Doctor, appointment_pydantic,appointment_pydanticIn, Appointment, medicalrecord_pydantic, medicalrecord_pydanticIn, MedicalRecord)
+from fastapi import HTTPException, status
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+
+
+
 
 
 app = FastAPI()
@@ -99,23 +106,83 @@ async def delete_doctor(doctor_id: int):
 
 
 
+#Helper Class for datetime validation
+class AppointmentCreate(BaseModel):
+    patient_id: int
+    doctor_id: int
+    start_time: str  # ISO format datetime string
+    end_time: str    # ISO format datetime string
+    status: Optional[str] = "scheduled"
 
-
-
-
-
-
-
-
-#Create Appointment
-
+# Create Appointment - Fixed Version
 @app.post('/appointment')
-async def add_appointment(appointment_info: appointment_pydanticIn):
-    appointment_obj = await Appointment.create(**appointment_info.dict(exclude_unset=True))
-    response = await appointment_pydantic.from_tortoise_orm(appointment_obj)
-    return {"status": "ok", "data": response}
+async def add_appointment(appointment_data: AppointmentCreate):
+    try:
+        # Validate patient existence
+        patient = await Patient.get_or_none(id=appointment_data.patient_id)
+        if not patient:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Patient not found"
+            )
 
+        # Validate doctor existence
+        doctor_obj = await Doctor.get_or_none(id=appointment_data.doctor_id)
+        if not doctor_obj:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Doctor not found"
+            )
 
+        # Parse datetime strings
+        try:
+            start_time = datetime.fromisoformat(appointment_data.start_time)
+            end_time = datetime.fromisoformat(appointment_data.end_time)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid datetime format. Use ISO format (YYYY-MM-DDTHH:MM:SS). Error: {str(e)}"
+            )
+
+        # Check if end time is after start time
+        if end_time <= start_time:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="End time must be after start time"
+            )
+
+        # Check for time conflicts
+        conflicting_appointment = await Appointment.filter(
+            doctor_id=appointment_data.doctor_id,
+            start_time__lt=end_time,
+            end_time__gt=start_time
+        ).exists()
+
+        if conflicting_appointment:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Doctor already has an appointment during this time slot"
+            )
+
+        # Create appointment
+        appointment = await Appointment.create(
+            patient_id=appointment_data.patient_id,
+            doctor_id=appointment_data.doctor_id,
+            start_time=start_time,
+            end_time=end_time,
+            status=appointment_data.status
+        )
+
+        response = await appointment_pydantic.from_tortoise_orm(appointment)
+        return {"status": "ok", "data": response}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while creating appointment: {str(e)}"
+        )
 #Get Requests
 @app.get('/appointment')
 async def get_all_appointmentS():
