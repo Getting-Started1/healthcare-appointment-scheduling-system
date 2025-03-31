@@ -201,20 +201,56 @@ async def get_specific_patient(appointment_id: int):
 
 
 
-
-
-
-
-
-
-
 # MedicalRecords
-# Post Request 
+class MedicalRecordCreate(BaseModel):
+    patient_id: int
+    appointment_id: int
+    diagnosis: str
+    prescription: str
+
 @app.post('/medicalrecord')
-async def add_medicalrecord(medicalrecord_info: medicalrecord_pydanticIn):
-    medicalrecord_obj = await MedicalRecord.create(**medicalrecord_info.dict(exclude_unset=True))
-    response = await medicalrecord_pydantic.from_tortoise_orm(medicalrecord_obj)
-    return {"status": "ok", "data": response}
+async def add_medicalrecord(record_data: MedicalRecordCreate):
+    try:
+        # Validate patient existence
+        patient = await Patient.get_or_none(id=record_data.patient_id)
+        if not patient:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Patient not found"
+            )
+
+        # Validate appointment existence
+        appointment = await Appointment.get_or_none(id=record_data.appointment_id)
+        if not appointment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Appointment not found"
+            )
+
+        # Check if appointment belongs to patient
+        if appointment.patient_id != patient.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Appointment does not belong to this patient"
+            )
+
+        # Create medical record
+        record = await MedicalRecord.create(
+            patient=patient,
+            appointment=appointment,
+            diagnosis=record_data.diagnosis,
+            prescription=record_data.prescription
+        )
+
+        response = await medicalrecord_pydantic.from_tortoise_orm(record)
+        return {"status": "ok", "data": response}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
 
 
 #Tortoise ORM setup
