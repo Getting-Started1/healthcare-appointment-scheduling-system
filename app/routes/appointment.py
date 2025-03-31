@@ -1,15 +1,19 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from datetime import datetime
 from tortoise.exceptions import DoesNotExist
 from app.models.appointment import Appointment
 from app.models.patient import Patient
 from app.models.doctor import Doctor
 from app.schemas.appointment import AppointmentOut, AppointmentCreate
+from app.models.user import User
+from app.utils.auth import get_current_active_user
+
+
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
 @router.post("/", response_model=AppointmentOut)
-async def create_appointment(appointment: AppointmentCreate):
+async def create_appointment(appointment: AppointmentCreate, current_user: User = Depends(get_current_active_user)):
     # Check patient exists
     if not await Patient.filter(id=appointment.patient_id).exists():
         raise HTTPException(
@@ -45,11 +49,11 @@ async def create_appointment(appointment: AppointmentCreate):
     return await AppointmentOut.from_tortoise_orm(appointment_obj)
 
 @router.get("/", response_model=list[AppointmentOut])
-async def get_all_appointments():
+async def get_all_appointments(current_user: User = Depends(get_current_active_user)):
     return await AppointmentOut.from_queryset(Appointment.all())
 
 @router.get("/{appointment_id}", response_model=AppointmentOut)
-async def get_appointment(appointment_id: int):
+async def get_appointment(appointment_id: int, current_user: User = Depends(get_current_active_user)):
     try:
         return await AppointmentOut.from_queryset_single(Appointment.get(id=appointment_id))
     except DoesNotExist:
