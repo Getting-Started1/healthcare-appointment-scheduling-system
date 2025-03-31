@@ -115,6 +115,32 @@ async def add_appointment(appointment_info: appointment_pydanticIn):
     response = await appointment_pydantic.from_tortoise_orm(appointment_obj)
     return {"status": "ok", "data": response}
 
+
+#Get Requests
+@app.get('/appointment')
+async def get_all_appointmentS():
+    response = await appointment_pydantic.from_queryset(Appointment.all())
+    return {"status": "ok", "data": response}
+
+
+@app.get('/appointment/{appointment_id}')
+async def get_specific_patient(appointment_id: int):
+    appointment = await Appointment.get_or_none(id=appointment_id)
+    if not appointment:
+        return {"status":"error","message":"Appointment not found"}
+    response = await appointment_pydantic.from_tortoise_orm(appointment)
+    return{"status":"ok", "data": response}
+
+
+
+
+
+
+
+
+
+
+
 # MedicalRecords
 # Post Request 
 @app.post('/medicalrecord')
