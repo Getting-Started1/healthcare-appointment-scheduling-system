@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.auth import Token, UserCreate
 from app.utils.auth import (
     authenticate_user,
@@ -30,7 +30,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/register")
-async def register_user(user_data: UserCreate):
+async def register_user(
+    user_data: UserCreate,
+    role: UserRole = UserRole.PATIENT
+    ):
     existing_user = await User.get_or_none(username=user_data.username)
     if existing_user:
         raise HTTPException(
@@ -41,6 +44,7 @@ async def register_user(user_data: UserCreate):
     hashed_password = get_password_hash(user_data.password)
     user = await User.create(
         username=user_data.username,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        role=role.value
     )
     return {"message": "User created successfully"}

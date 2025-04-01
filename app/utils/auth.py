@@ -39,6 +39,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
+
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -64,3 +66,7 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
         raise HTTPException(status_code=400, detail="Inactive user")
     return get_current_user    
 
+async def get_current_doctor(current_user: User = Depends(get_current_active_user)):
+    if current_user.role != "doctor":
+        raise HTTPException(status_code=403, detail="Doctor access required")
+    return current_user
