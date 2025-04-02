@@ -10,3 +10,4 @@ class Appointment(Model):
     end_time = fields.DatetimeField()
     status = fields.CharField(max_length =50, default="scheduled")
     medical_record = fields.ReverseRelation["MedicalRecord"] # One to Many
+    doctor = fields.ForeignKeyField("models.User", related_name="appointments")

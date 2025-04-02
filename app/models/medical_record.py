@@ -8,3 +8,4 @@ class MedicalRecord(Model):
     appointment = fields.ForeignKeyField("models.Appointment", related_name="medical_record")
     diagnosis = fields.TextField()
     prescription = fields.TextField()
+    doctor = fields.ForeignKeyField("models.User", related_name="created_records")
