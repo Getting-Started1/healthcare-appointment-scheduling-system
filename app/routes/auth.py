@@ -14,6 +14,8 @@ from app.utils.auth import (
 router = APIRouter(tags=["auth"])
 
 
+router = APIRouter(tags=["auth"])
+
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
@@ -29,11 +31,17 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.post("/register")
+@router.post("/register", response_model=UserOut)
 async def register_user(
     user_data: UserCreate,
     role: UserRole = UserRole.PATIENT
-    ):
+):
+    """
+    Register a new user
+    - Default role is PATIENT
+    - Returns user ID for profile creation
+    - For doctors: Use returned ID to create doctor profile via /doctors endpoint
+    """
     existing_user = await User.get_or_none(username=user_data.username)
     if existing_user:
         raise HTTPException(
@@ -47,4 +55,10 @@ async def register_user(
         hashed_password=hashed_password,
         role=role.value
     )
-    return {"message": "User created successfully"}
+    
+    return {
+        "id": user.id,
+        "username": user.username,
+        "role": user.role,
+        "message": f"User created successfully. Next: Create {role.value} profile" 
+    }
