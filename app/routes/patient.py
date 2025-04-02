@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from tortoise.exceptions import DoesNotExist
 from app.models.patient import Patient
-from app.schemas.patient import PatientIn, PatientOut
+from app.schemas.patient import PatientIn, PatientOut, PatientUpdate
 from app.utils.auth import get_current_active_user, get_current_doctor, get_current_admin
 from app.models.user import User
 
@@ -63,18 +63,22 @@ async def get_patient(
 
 @router.put("/{patient_id}", response_model=PatientOut)
 async def update_patient(
-    patient_id: int,
-    patient: PatientIn,
+    patient_id: int,  # From URL path
+    patient_data: PatientUpdate,  # From request body
     current_user: User = Depends(get_current_active_user)
 ):
-    # Patients can only update their own records
-    if current_user.role == "patient":
-        existing_patient = await Patient.get_or_none(id=patient_id)
-        if not existing_patient or existing_patient.user_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized to update this patient record"
-            )
-    
-    await Patient.filter(id=patient_id).update(**patient.dict(exclude_unset=True))
-    return await PatientOut.from_queryset_single(Patient.get(id=patient_id))
+    # Verify patient exists
+    patient = await Patient.get_or_none(id=patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Authorization check
+    if current_user.role == "patient" and patient.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Patients can only update their own records"
+        )
+
+    # Perform update
+    await Patient.filter(id=patient_id).update(**patient_data.dict())
+    return await PatientOut.from_tortoise_orm(await Patient.get(id=patient_id))
