@@ -4,7 +4,7 @@ from tortoise import fields
 
 class UserRole (str, Enum):
     PATIENT = "patient"
-    DOCTOR = "patient"
+    DOCTOR = "doctor"
     ADMIN = "admin"
 
 class User(Model):

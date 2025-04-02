@@ -8,3 +8,4 @@ class Doctor(Model):
     specialization = fields.CharField(max_length= 255)
     contact = fields.CharField(max_length= 20)
     appointments = fields.ReverseRelation["Appointment"] # one to Many
+    user = fields.ForeignKeyField("models.User", related_name="doctor_profile")
