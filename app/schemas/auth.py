@@ -17,3 +17,11 @@ class UserInDB(UserBase):
     hashed_password: str
     disabled: bool
     
+class UserOut(BaseModel):
+    id: int
+    username: str
+    role: str
+    message: str = None  # Optional field
+
+    class Config:
+        orm_mode = True
