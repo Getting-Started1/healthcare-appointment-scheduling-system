@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from tortoise.contrib.fastapi import register_tortoise
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 # Import routers
 from app.routes import medical_record, patient, doctor, appointment, auth
@@ -11,7 +12,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", 
-                   "https://healthcare-appointment-scheduling-system.vercel.app"
+                 "https://healthcare-appointment-scheduling-system.vercel.app"
                    ],  # Your React app's URL
     allow_credentials=True,
     allow_methods=["*"],
@@ -41,6 +42,10 @@ register_tortoise(
     generate_schemas=True,
     add_exception_handlers=True,
 )
+
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(request: Request, rest_of_path: str):
+    return JSONResponse(content={"message": "CORS preflight"}, status_code=200)
 
 @app.get("/")
 def read_root():
