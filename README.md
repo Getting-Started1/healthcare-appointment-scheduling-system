@@ -22,7 +22,7 @@ FrontEnd/
 🖥️ Frontend Setup (React)
 Navigate to the frontend directory:
 
-cd FrotEnd
+cd FrontEnd
 
 Install the dependencies:
 

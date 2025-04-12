@@ -10,7 +10,7 @@ app = FastAPI()
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Your React app's URL
+    allow_origins=["https://healthcare-appointment-scheduling-system.vercel.app"],  # Your React app's URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
