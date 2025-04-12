@@ -1,14 +1,23 @@
 import axios from "axios";
 
-axios.defaults.baseURL = process.env.REACT_APP_SERVER_DOMAIN;
+const fetchData = async (url, options = {}) => {
+  const token = localStorage.getItem("token");
 
-const fetchData = async (url) => {
-  const { data } = await axios.get(url, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  });
-  return data;
+  try {
+    const response = await axios.get(`http://localhost:8000${url}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+      ...options,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch data:", error);
+    throw error;
+  }
 };
 
 export default fetchData;

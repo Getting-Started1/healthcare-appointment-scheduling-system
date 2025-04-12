@@ -14,34 +14,36 @@ const Doctors = () => {
   const dispatch = useDispatch();
   const { loading } = useSelector((state) => state.root);
 
-  const fetchAllDocs = async () => {
-    dispatch(setLoading(true));
-    const data = await fetchData(`/doctor/getalldoctors`);
-    setDoctors(data);
-    dispatch(setLoading(false));
+  const fetchAllDoctors = async () => {
+    try {
+      dispatch(setLoading(true));
+      const data = await fetchData("/doctors/"); // ✅ correct API route
+      setDoctors(data);
+    } catch (error) {
+      console.error("Failed to fetch doctors:", error);
+      setDoctors([]);
+    } finally {
+      dispatch(setLoading(false));
+    }
   };
 
   useEffect(() => {
-    fetchAllDocs();
+    fetchAllDoctors();
   }, []);
 
   return (
     <>
       <Navbar />
-      {loading && <Loading />}
-      {!loading && (
+      {loading ? (
+        <Loading />
+      ) : (
         <section className="container doctors">
           <h2 className="page-heading">Our Doctors</h2>
           {doctors.length > 0 ? (
             <div className="doctors-card-container">
-              {doctors.map((ele) => {
-                return (
-                  <DoctorCard
-                    ele={ele}
-                    key={ele._id}
-                  />
-                );
-              })}
+              {doctors.map((ele) => (
+                <DoctorCard ele={ele} key={ele.id} /> // ✅ use `id` not `_id`
+              ))}
             </div>
           ) : (
             <Empty />
