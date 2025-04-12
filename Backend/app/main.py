@@ -1,19 +1,13 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
 from fastapi.middleware.cors import CORSMiddleware
-
-
-from app.models.user import User
-app = FastAPI()
 
 # Import routers
 from app.routes import medical_record, patient, doctor, appointment, auth
 
-# In your main FastAPI app file
-from fastapi.middleware.cors import CORSMiddleware
-
 app = FastAPI()
 
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],  # Your React app's URL
