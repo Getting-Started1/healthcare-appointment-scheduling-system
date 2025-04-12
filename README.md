@@ -57,5 +57,4 @@ Backend: FastAPI, Python
 
 Server: Uvicorn
 
-
-## Here is the FastAPI documentation: https://healthcare-appointment-scheduling-system.onrender.com/docs#/
+### Here is the FastAPI documentation[click here](https://healthcare-appointment-scheduling-system.onrender.com/docs#/)
