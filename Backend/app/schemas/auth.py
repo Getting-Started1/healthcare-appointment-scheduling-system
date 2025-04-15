@@ -13,8 +13,9 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel):
+    user_id: int | None = None
     username: str | None = None
-    role: str | None = None  # Add role to token data
+    role: str | None = None
 
 class UserBase(BaseModel):
     username: str

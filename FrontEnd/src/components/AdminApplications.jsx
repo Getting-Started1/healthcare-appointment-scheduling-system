@@ -18,10 +18,12 @@ const AdminApplications = () => {
   const getAllApp = async (e) => {
     try {
       dispatch(setLoading(true));
-      const temp = await fetchData(`/doctor/getnotdoctors`);
+      const temp = await fetchData(`/doctors/pending`);
       setApplications(temp);
       dispatch(setLoading(false));
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error fetching pending doctor applications:", error);
+    }
   };
 
   const acceptUser = async (userId) => {
@@ -29,20 +31,19 @@ const AdminApplications = () => {
       const confirm = window.confirm("Are you sure you want to accept?");
       if (confirm) {
         await toast.promise(
-          axios.put(
-            "/doctor/acceptdoctor",
-            { id: userId },
+          axios.post(
+            `/doctors/accept/${userId}`,
+            {},
             {
               headers: {
                 authorization: `Bearer ${localStorage.getItem("token")}`,
               },
-              data: { userId },
             }
           ),
           {
-            success: "Application accepted",
-            error: "Unable to accept application",
-            loading: "Accepting application...",
+            success: "Doctor application accepted successfully",
+            error: "Unable to accept doctor application",
+            loading: "Accepting doctor application...",
           }
         );
         getAllApp();
@@ -57,20 +58,18 @@ const AdminApplications = () => {
       const confirm = window.confirm("Are you sure you want to delete?");
       if (confirm) {
         await toast.promise(
-          axios.put(
-            "/doctor/rejectdoctor",
-            { id: userId },
+          axios.delete(
+            `/doctors/reject/${userId}`,
             {
               headers: {
                 authorization: `Bearer ${localStorage.getItem("token")}`,
               },
-              data: { userId },
             }
           ),
           {
-            success: "Application rejected",
-            error: "Unable to reject application",
-            loading: "Rejecting application...",
+            success: "Doctor application rejected successfully",
+            error: "Unable to reject doctor application",
+            loading: "Rejecting doctor application...",
           }
         );
         getAllApp();

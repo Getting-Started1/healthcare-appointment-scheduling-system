@@ -2,6 +2,11 @@ from fastapi import FastAPI, Request
 from tortoise.contrib.fastapi import register_tortoise
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Import routers
 from app.routes import medical_record, patient, doctor, appointment, auth
@@ -12,7 +17,11 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", 
-                 "https://healthcare-appointment-scheduling-system.vercel.app"
+                 "https://healthcare-appointment-scheduling-system.vercel.app",
+                 "http://localhost:5173",  # Vite default port
+                 "http://127.0.0.1:5173",  # Vite default port
+                 "http://localhost:8000",  # Your backend
+                 "http://127.0.0.1:8000"   # Your backend
                    ],  # Your React app's URL
     allow_credentials=True,
     allow_methods=["*"],
@@ -26,10 +35,19 @@ app.include_router(doctor.router)
 app.include_router(appointment.router)
 app.include_router(medical_record.router)
 
+# Database configuration
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME", "healthcare_db")
+
+DATABASE_URL = f"postgres://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
 # Database setup
 register_tortoise(
     app,
-    db_url="sqlite://db.sqlite3",
+    db_url=DATABASE_URL,
     modules={
         "models": [
             "app.models.user",

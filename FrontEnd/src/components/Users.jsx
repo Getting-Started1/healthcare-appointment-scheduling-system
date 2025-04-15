@@ -19,7 +19,7 @@ const Users = () => {
   const getAllUsers = async () => {
     try {
       dispatch(setLoading(true));
-      let url = "/user/getallusers";
+      let url = "/users/";
       if (filter !== "all") {
         url += `?filter=${filter}`;
       }
@@ -29,7 +29,9 @@ const Users = () => {
       const temp = await fetchData(url);
       setUsers(temp);
       dispatch(setLoading(false));
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
   };
 
   const deleteUser = async (userId) => {
@@ -37,14 +39,12 @@ const Users = () => {
       const confirm = window.confirm("Are you sure you want to delete?");
       if (confirm) {
         await toast.promise(
-          axios.delete("/user/deleteuser", {
+          axios.delete(`/users/${userId}`, {
             headers: {
               authorization: `Bearer ${localStorage.getItem("token")}`,
             },
-            data: { userId },
           }),
           {
-            pending: "Deleting in...",
             success: "User deleted successfully",
             error: "Unable to delete user",
             loading: "Deleting user...",

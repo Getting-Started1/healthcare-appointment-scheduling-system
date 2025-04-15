@@ -18,10 +18,12 @@ const AdminAppointments = () => {
   const getAllAppoint = async (e) => {
     try {
       dispatch(setLoading(true));
-      const temp = await fetchData(`/appointment/getallappointments`);
+      const temp = await fetchData(`/appointments/`);
       setAppointments(temp);
       dispatch(setLoading(false));
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+    }
   };
 
   useEffect(() => {
@@ -31,26 +33,21 @@ const AdminAppointments = () => {
   const complete = async (ele) => {
     try {
       await toast.promise(
-        axios.put(
-          "/appointment/completed",
-          {
-            appointid: ele?._id,
-            doctorId: ele?.doctorId._id,
-            doctorname: `${ele?.userId?.firstname} ${ele?.userId?.lastname}`,
-          },
+        axios.patch(
+          `/appointments/${ele.id}/status`,
+          { new_status: "completed" },
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           }
         ),
         {
-          success: "Appointment booked successfully",
-          error: "Unable to book appointment",
-          loading: "Booking appointment...",
+          success: "Appointment marked as completed",
+          error: "Unable to update appointment",
+          loading: "Updating appointment...",
         }
       );
-
       getAllAppoint();
     } catch (error) {
       return error;

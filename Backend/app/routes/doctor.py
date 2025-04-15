@@ -32,9 +32,10 @@ async def create_doctor(
 
     doctor = await Doctor.create(
         user_id=doctor_data.user_id,
-        name=doctor_data.username,  # Or use separate name field
         specialization=doctor_data.specialization,
-        contact=doctor_data.contact
+        contact=doctor_data.contact,
+        experience=doctor_data.experience,
+        fees=doctor_data.fees
     )
     return await DoctorOut.from_tortoise_orm(doctor)
 

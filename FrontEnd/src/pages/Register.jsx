@@ -108,7 +108,7 @@ function Register() {
         profile_picture: file || null,
       };
 
-      const response = await api.post("/register", userData);
+      const response = await api.post("/auth/register", userData);
       
       if (response.status === 200 || response.status === 201) {
         toast.success("Registration successful!");

@@ -9,7 +9,9 @@ import { setUserInfo } from "../redux/reducers/rootSlice";
 import jwt_decode from "jwt-decode";
 import fetchData from "../helper/apiCall";
 
-axios.defaults.baseURL = process.env.REACT_APP_SERVER_DOMAIN;
+// Set the base URL from environment variable
+const baseUrl = process.env.REACT_APP_SERVER_DOMAIN || "http://localhost:8000";
+axios.defaults.baseURL = baseUrl;
 
 function Login() {
   const dispatch = useDispatch();
@@ -48,7 +50,7 @@ function Login() {
       }
 
       // Make login request
-      const { data } = await axios.post("/login", {
+      const { data } = await axios.post("/auth/login", {
         email,
         password,
         role,
@@ -65,7 +67,7 @@ function Login() {
       }));
 
       // Fetch complete user data
-      const userData = await fetchData(`/user/getuser/${decoded.user_id}`);
+      const userData = await fetchData(`/auth/user/getuser/${decoded.user_id}`);
       dispatch(setUserInfo(userData));
 
       // Redirect based on role

@@ -12,11 +12,13 @@ from app.utils.auth import (
     get_password_hash,
     verify_password,
     get_current_user,
+    get_current_admin,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
 from tortoise.exceptions import IntegrityError
+from typing import List
 
-router = APIRouter(tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -27,6 +29,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={
+            "user_id": user.id,
             "sub": user.username,
             "role": user.role.value  # Include role in token
         },
@@ -61,9 +64,9 @@ async def login_with_role(login_data: LoginForm):
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={
+            "user_id": user.id,
             "sub": user.username,
-            "role": user.role.value,
-            "user_id": str(user.id)  # Include user ID in token
+            "role": user.role.value
         },
         expires_delta=access_token_expires
     )
@@ -121,3 +124,9 @@ async def get_user(user_id: int):
         )
     # Replace UserOut.from_orm(user) with:
     return UserOut.model_validate(user)
+
+@router.get("/users", response_model=List[UserOut])
+async def get_users(current_user: User = Depends(get_current_admin)):
+    """Get all users. Only accessible by admin."""
+    users = await User.all()
+    return [UserOut.model_validate(user) for user in users]

@@ -43,12 +43,12 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({
         "exp": expire,
-        "sub": str(data["user_id"]),  # store user_id in sub
-        "role": data.get("role")      # optional: if you use role checks later
+        "user_id": data["user_id"],  # Store user_id directly
+        "username": data.get("sub"),
+        "role": data.get("role")
     })
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
-
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
@@ -58,45 +58,39 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")  # retrieve user_id from sub
+        user_id: int = payload.get("user_id")
         if user_id is None:
             raise credentials_exception
+        token_data = TokenData(
+            user_id=user_id,
+            username=payload.get("username"),
+            role=payload.get("role")
+        )
     except JWTError:
         raise credentials_exception
-
-    user = await User.get_or_none(id=int(user_id))
+    
+    user = await User.get_or_none(id=token_data.user_id)
     if user is None:
         raise credentials_exception
     return user
 
-
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    if not isinstance(current_user, User):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid user object"
-        )
     if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive account")
-    return current_user  
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
 
 async def get_current_doctor(current_user: User = Depends(get_current_user)):
-    if not hasattr(current_user, 'role'):
+    if current_user.role != "Doctor":
         raise HTTPException(
-            status_code=401,
-            detail="Invalid user object"
-        )
-    if current_user.role != "doctor":
-        raise HTTPException(
-            status_code=403,
-            detail="Doctor privileges required"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this resource"
         )
     return current_user
 
 async def get_current_admin(current_user: User = Depends(get_current_user)):
-    if current_user.role != "admin":
+    if current_user.role != "Admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin privileges required"
+            detail="Not authorized to access this resource"
         )
     return current_user

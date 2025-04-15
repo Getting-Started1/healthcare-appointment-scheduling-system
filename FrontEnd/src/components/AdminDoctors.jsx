@@ -21,7 +21,7 @@ const AdminDoctors = () => {
   const getAllDoctors = async () => {
     try {
       dispatch(setLoading(true));
-      let url = "/doctor/getalldoctors";
+      let url = "/doctors/";
       if (filter !== "all") {
         url += `?filter=${filter}`;
       }
@@ -31,7 +31,9 @@ const AdminDoctors = () => {
       const temp = await fetchData(url);
       setDoctors(temp);
       dispatch(setLoading(false));
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+    }
   };
 
   const deleteUser = async (userId) => {
@@ -39,9 +41,8 @@ const AdminDoctors = () => {
       const confirm = window.confirm("Are you sure you want to delete?");
       if (confirm) {
         await toast.promise(
-          axios.put(
-            "/doctor/deletedoctor",
-            { userId },
+          axios.delete(
+            `/doctors/${userId}`,
             {
               headers: {
                 authorization: `Bearer ${localStorage.getItem("token")}`,

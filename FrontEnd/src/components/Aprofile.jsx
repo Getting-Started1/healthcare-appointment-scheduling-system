@@ -30,7 +30,7 @@ function Aprofile() {
   const getUser = async () => {
     try {
       dispatch(setLoading(true));
-      const temp = await fetchData(`/user/getuser/${userId}`);
+      const temp = await fetchData(`/auth/user/getuser/${userId}`);
       setFormDetails({
         ...temp,
         password: "",
@@ -40,7 +40,9 @@ function Aprofile() {
       });
       setFile(temp.pic);
       dispatch(setLoading(false));
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
   };
 
   useEffect(() => {

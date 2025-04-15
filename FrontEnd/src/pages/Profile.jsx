@@ -28,7 +28,7 @@ function Profile() {
   const getUser = async () => {
     try {
       dispatch(setLoading(true));
-      const temp = await fetchData(`/user/getuser/${userId}`);
+      const temp = await fetchData(`/auth/user/getuser/${userId}`);
       setFormDetails({
         name: temp.name || "",
         email: temp.email || "",
@@ -38,6 +38,7 @@ function Profile() {
       setFile(temp.pic);
     } catch (error) {
       toast.error("Failed to load profile");
+      console.error("Error loading profile:", error);
     } finally {
       dispatch(setLoading(false));
     }
