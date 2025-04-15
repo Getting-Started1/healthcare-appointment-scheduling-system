@@ -18,7 +18,7 @@ from app.utils.auth import (
 from tortoise.exceptions import IntegrityError
 from typing import List
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -37,44 +37,113 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.post("/login", response_model=Token)
-async def login_with_role(login_data: LoginForm):
-    # Find user by email
-    user = await User.get_or_none(email=login_data.email)
+@router.post("/login", response_model=Token,
+    responses={
+        200: {
+            "description": "Successfully authenticated",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                        "token_type": "bearer"
+                    }
+                }
+            }
+        },
+        401: {
+            "description": "Authentication failed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "error": {
+                            "code": 401,
+                            "message": "Incorrect email or password",
+                            "type": "AuthenticationError"
+                        }
+                    }
+                }
+            }
+        }
+    })
+async def login_with_role(form_data: LoginForm = Body(..., example={
+    "email": "john@example.com",
+    "password": "strongpassword123",
+    "role": "Patient"
+})):
+    """
+    Authenticate a user and return a JWT token.
+    
+    - **email**: User's email address
+    - **password**: User's password
+    - **role**: User's role (Admin, Doctor, or Patient)
+    
+    Returns a JWT token for authenticated requests.
+    """
+    user = await authenticate_user(form_data.email, form_data.password, form_data.role)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
-        )
-    
-    # Verify password
-    if not verify_password(login_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
-        )
-    
-    # Verify role matches
-    if user.role.value != login_data.role:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"User is not a {login_data.role}"
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={
-            "user_id": user.id,
-            "sub": user.username,
-            "role": user.role.value
-        },
+        data={"user_id": user.id, "role": user.role},
         expires_delta=access_token_expires
     )
+    
     return {"access_token": access_token, "token_type": "bearer"}
 
-
-@router.post("/register", response_model=UserOut)
-async def register_user(user_data: UserCreate):
+@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED,
+    responses={
+        201: {
+            "description": "User successfully registered",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": 1,
+                        "username": "john_doe",
+                        "email": "john@example.com",
+                        "role": "Patient",
+                        "profile_picture": "https://example.com/pic.jpg"
+                    }
+                }
+            }
+        },
+        400: {
+            "description": "Invalid input data",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "error": {
+                            "code": 400,
+                            "message": "Email already registered",
+                            "type": "ValidationError"
+                        }
+                    }
+                }
+            }
+        }
+    })
+async def register_user(user_data: UserCreate = Body(..., example={
+    "username": "john_doe",
+    "email": "john@example.com",
+    "password": "strongpassword123",
+    "role": "Patient",
+    "profile_picture": "https://example.com/pic.jpg"
+})):
+    """
+    Register a new user in the system.
+    
+    - **username**: Unique username for the user
+    - **email**: Valid email address
+    - **password**: Strong password (min 6 characters)
+    - **role**: User role (Admin, Doctor, or Patient)
+    - **profile_picture**: Optional URL to user's profile picture
+    
+    Returns the created user without sensitive information.
+    """
     try:
         # Check if email already exists
         if await User.filter(email=user_data.email).exists():
@@ -83,46 +152,82 @@ async def register_user(user_data: UserCreate):
                 detail="Email already registered"
             )
         
-        # Generate username from email (remove @ and everything after)
-        username = user_data.email.split('@')[0]
-        
-        # Hash the password
-        hashed_password = get_password_hash(user_data.password)
-        
         # Create user
         user = await User.create(
-            username=username,  # Generated username
+            username=user_data.username,
             email=user_data.email,
-            hashed_password=hashed_password,
-            firstname=user_data.firstname,
-            lastname=user_data.lastname,
+            password_hash=get_password_hash(user_data.password),
             role=user_data.role,
-            profile_picture=user_data.profile_picture,
-            disabled=False
+            profile_picture=user_data.profile_picture
         )
         
-        return user
+        return UserOut.model_validate(user)
         
-    except IntegrityError as e:
+    except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Database error occurred"
+            detail="Username already taken"
         )
-    except Exception as e:
+    except ValidationError as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
 
-@router.get("/user/getuser/{user_id}", response_model=UserOut)
-async def get_user(user_id: int):
+@router.get("/user/getuser/{user_id}", response_model=UserOut,
+    responses={
+        200: {
+            "description": "User found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": 1,
+                        "username": "john_doe",
+                        "email": "john@example.com",
+                        "role": "Patient",
+                        "profile_picture": "https://example.com/pic.jpg"
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "User not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "error": {
+                            "code": 404,
+                            "message": "User not found",
+                            "type": "NotFoundError"
+                        }
+                    }
+                }
+            }
+        }
+    })
+async def get_user(user_id: int, current_user: User = Depends(get_current_user)):
+    """
+    Get user details by ID.
+    
+    - **user_id**: ID of the user to retrieve
+    
+    Returns user details if found.
+    Requires authentication.
+    """
     user = await User.get_or_none(id=user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    # Replace UserOut.from_orm(user) with:
+    
+    # Check if user has permission to view this profile
+    if current_user.role != "Admin" and current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to view this profile"
+        )
+    
     return UserOut.model_validate(user)
 
 @router.get("/users", response_model=List[UserOut])
