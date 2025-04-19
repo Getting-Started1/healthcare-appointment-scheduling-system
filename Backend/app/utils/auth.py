@@ -23,7 +23,7 @@ def verify_password(plain_password: str, hashed_password: str):
 def get_password_hash(password: str):
     return pwd_context.hash(password)
 
-async def authenticate_user(username: str, password: str):
+async def authenticate_user(username: str, password: str, role: str = None):
     # Try to find user by username or email
     user = await User.get_or_none(username=username)
     if not user:
@@ -33,6 +33,11 @@ async def authenticate_user(username: str, password: str):
     
     if not verify_password(password, user.hashed_password):
         return False
+        
+    # If role is provided, verify it matches
+    if role and user.role != role:
+        return False
+        
     return user
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
